@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <title>Scotland termination figures</title>
+ 
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Color Scale -->
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<!-- Font -->
+<link href="https://fonts.googleapis.com/css?family=Merriweather&display=swap" rel="stylesheet">
+
+<style>
+
+body {
+  font: 10px Merriweather, sans-serif;
+  position: relative;
+}
+
+.node {
+  box-sizing: border-box;
+  line-height: 1em;
+  overflow: hidden;
+  position: absolute;
+  white-space: pre;
+  background: #ddd;
+}
+
+.node-value {
+  font-weight: bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+<div>
+<select id="measureButton"></select>
+<select id="yearButton"></select>
+</div>
+
+<script>
+
+var width = 900;
+var height = 900;
+
+var measuresMap = new Map();
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("id", "thesvg")
+    .attr("width", width )
+    .attr("height", height)
+		  
+// create a tooltip
+var Tooltip = d3.select("#my_dataviz")
+  .append("div")
+  .style("opacity", 0)
+  .attr("class", "tooltip")
+  .style("background-color", "white")
+  .style("border", "solid")
+  .style("border-width", "1px")
+  .style("border-radius", "0px")
+  .style("padding", "5px")
+  .style("position", "absolute")
+  .style("font-family", "Merriweather")
+  .style("font-size", "130%")
+  
+// Three function that change the tooltip when user hover / move / leave a cell
+var mouseover = function(d) {
+Tooltip
+  .style("opacity", .9)
+}
+
+var mousemove = function(d) {
+Tooltip
+  .html(getNodeText(d, true))
+  .style("left", d3.event.pageX + 10 + "px")
+  .style("top", d3.event.pageY + 10 + "px")
+  .style("z-index", 2)
+}
+
+var mouseleave = function(d) {
+Tooltip
+  .style("opacity", 0)
+d3.select("svg").selectAll("text.data").remove();
+}
+
+// Parse the csv file
+function parseData(d) {
+	
+	d.Year = +d.Year;
+	d.Value = d.Value == "*" ? 0 : d.Value = +d.Value; //!! handle the missing data.
+	
+	return d;
+}
+
+var measure = "Age";
+var year = "2009";
+var boards = new Map();
+
+function getNodeText(d, value = false)
+{
+	var text =  boards.get(d.data.ID) + "\n" + d.data.Group; 
+	if (value)
+	{
+		text += "<br /><strong>" + d.data.Value + "</strong>";
+	}
+	return text;
+}
+
+var IDs
+var measuresList
+var rolled
+var nested
+var theData;
+var years;
+var year;
+var durationTime = 1000;
+
+d3.csv("terminations data.csv", parseData, function(inData) {
+	d3.csv("measures_descriptors.csv", function(measures) {
+	//Read and parse the data
+		d3.csv('Health_Boards_May_2016_Names_and_Codes_in_Scotland.csv', function(lookup){
+			lookup.reduce(function(map, obj) {
+				boards.set(obj.HB16CD, obj.HB16NM);
+			}, {});
+			
+			theData = inData;
+			
+			d3.csv("measures_descriptors.csv", function(measuresData) {
+			
+				measuresData.reduce(function(map, obj) {
+					measuresMap.set(obj.measure, obj);
+				}, {});
+		
+					IDs = Array.from(boards.keys());
+					
+					//console.log(IDs);
+					
+						measures.reduce(function(map, obj) {
+							measuresMap.set(obj.measure, obj);
+						}, {});
+						
+						measuresList = Array.from(measuresMap.keys());
+						
+						// add the options to the measures button
+						d3.select('#measureButton')
+						.on('change', function(d) 
+						{
+							update();
+						})
+						.selectAll('option')
+						.data(measuresList)
+						.enter()
+						.append('option')
+						.attr('value', function(d) {return d;})
+						.text(function(d) {return measuresMap.get(d).description;});
+
+					
+						rolled = d3.nest()
+										.key(function(d) { return d.Measure; })
+										.key(function(d) { return d.Year; })
+										.key(function(d) { return d.ID; })
+										.rollup(function(v) { return d3.sum(v, function(d) { return d.Value; }); })
+										.entries(theData);
+										
+						nested = d3.nest()
+										.key(function(d) { return d.Measure; })
+										.key(function(d) { return d.Year; })
+										.key(function(d) { return d.ID; })
+										.entries(theData);
+										
+						var yearNested = d3.nest()
+										.key(function(d) { return d.Year; })
+										.entries(theData);
+										
+						console.log(yearNested);
+						years = yearNested.map(function(d) { return d.key;})
+						//console.log(years);
+						
+						// add the options to the measures button
+						d3.select('#yearButton')
+						.on('change', function(d) 
+						{
+							update();
+						})
+						.selectAll('option')
+						.data(years)
+						.enter()
+						.append('option')
+						.attr('value', function(d) {return d;})
+						.text(function(d) {return d;});
+														
+						//console.log(rolled);
+						update();
+												
+			})
+		})
+	})
+})
+
+function update()
+{
+	
+	measure = d3.select("#measureButton").property("value");
+	//console.log(measure);
+	
+	year = d3.select("#yearButton").property("value");
+
+	var rolledSelect = rolled
+	.filter(function(e) {return e.key == measure; })
+	[0]
+	.values
+	.filter(function(e) {return e.key == year; })
+	[0]
+	.values
+	.filter(function(e) {return IDs.includes(e.key); });
+	
+	var nestedSelect = nested
+	.filter(function(e) {return e.key == measure; })
+	[0]
+	.values
+	.filter(function(e) {return e.key == year; })
+	[0]
+	.values
+	.filter(function(e) {return IDs.includes(e.key); });
+	
+	//console.log(nestedSelect);
+	
+	//console.log(root);
+	
+	var nestedData = {name : "data", values : nestedSelect};
+	
+	
+
+	//console.log(nestedData);
+	//console.log(data);
+
+	var treemapLayout = d3.treemap()
+		.size([width, height])
+		.tile(d3.treemapSliceDice)
+		.padding(1)
+		.round(true);
+
+	var myroot = d3.hierarchy(nestedData, function(d) { return d.values; }).sum(function(d) { return d.Value; });
+
+	treemapLayout(myroot);
+
+	//console.log(root);
+	//console.log(myroot);
+	
+	catNestedData = d3.nest()
+	.key(function(d) { return d.Measure; })
+	.key(function(d) { return d.Group; })
+	.entries(theData);
+	
+	var allCategories = catNestedData.filter(function(f)
+	{    return f['key'] == measure;
+	});
+	
+	var categories = allCategories[0].values.map( function(d) { return d.key; });
+	
+	//console.log(categories);
+	
+	color = d3.scaleOrdinal()
+			.domain(categories)
+			.range(d3.schemeSet3)
+	
+	var node = d3.select("#my_dataviz").selectAll(".node").data(myroot.leaves());
+	
+	//console.log(myroot.leaves());
+	
+	   node
+	  .enter()
+	  .append("div")
+	  .on("mouseover", mouseover)
+	  .on("mousemove", mousemove)
+	  .on("mouseleave", mouseleave)
+	  .merge(node)
+	  .transition()
+	  .duration(durationTime)
+	  .attr("class", "node")
+	  .text(function(d) {return getNodeText(d, false) + "\n" + d.data.Value;})
+	  .style("left", function(d) { return d.x0 + "px"; })
+	  .style("top", function(d) { return d.y0 + "px"; })
+	  .style("width", function(d) { return d.x1 - d.x0 + "px"; })
+	  .style("height", function(d) { return d.y1 - d.y0 + "px"; })
+	  .style("background", function(d,i) {
+			//console.log(d.data.Group);
+			//console.log(color(d.data.Group));
+			return color(d.data.Group);
+		})	 
+
+		node.exit().remove();
+}
+
+
+</script>
+</body>
+</html>
