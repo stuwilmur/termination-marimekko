@@ -17,8 +17,16 @@
 <style>
 
 body {
-  font: 10px Merriweather, sans-serif;
+  font: 12px Merriweather, sans-serif;
   position: relative;
+}
+
+.caption {
+	font-size : 130%;
+}
+
+.subcaption {
+	font-size : 80%;
 }
 
 .node {
@@ -34,22 +42,29 @@ body {
   font-weight: bold;
 }
 
+.tooltip {
+	pointer-events: none;
+}
+
 </style>
 </head>
 
 <body>
 
 <!-- Create a div where the graph will take place -->
+
 <div id="my_dataviz"></div>
 <div>
 <select id="measureButton"></select>
 <select id="yearButton"></select>
 </div>
-
+<p class="caption">Termination of pregnancy in Scotland across health board categorised by age, deprivation, estimated gestation,  method and grounds for termination.<br /><strong>Click on the map</strong> to select/deselect health boards. Use the menus below to select categorisation and year.</p>
+<p class="subcaption">Data from the <a href="https://www.isdscotland.org/Health-Topics/Sexual-Health/Publications/2019-05-28/2019-05-28-Terminations-2018-Report.pdf">Termination of Pregnancy report, Information Services Division Scotland, published 28 May 2019</a>.</p>
 <script>
 
-var width = 900;
-var height = 900;
+var width = 800;
+var pageWidth = 1600;
+var height = 800;
 
 var measuresMap = new Map();
 
@@ -57,7 +72,7 @@ var measuresMap = new Map();
 var svg = d3.select("#my_dataviz")
   .append("svg")
     .attr("id", "thesvg")
-    .attr("width", width )
+    .attr("width", pageWidth )
     .attr("height", height)
 		  
 // create a tooltip
@@ -74,10 +89,24 @@ var Tooltip = d3.select("#my_dataviz")
   .style("font-family", "Merriweather")
   .style("font-size", "130%")
   
+// create a tooltip for the map
+var mapTooltip = d3.select("#my_dataviz")
+  .append("div")
+  .style("opacity", 0.1)
+  .attr("class", "tooltip")
+  .style("background-color", "white")
+  .style("border", "none")
+  .style("border-width", "1px")
+  .style("border-radius", "0px")
+  .style("padding", "5px")
+  .style("position", "absolute")
+  .style("font-family", "Merriweather")
+  .style("font-size", "150%")
+  
 // Three function that change the tooltip when user hover / move / leave a cell
 var mouseover = function(d) {
 Tooltip
-  .style("opacity", .9)
+  .style("opacity", .8)
 }
 
 var mousemove = function(d) {
@@ -125,6 +154,7 @@ var theData;
 var years;
 var year;
 var durationTime = 1000;
+var geojson;
 
 d3.csv("terminations data.csv", parseData, function(inData) {
 	d3.csv("measures_descriptors.csv", function(measures) {
@@ -134,75 +164,79 @@ d3.csv("terminations data.csv", parseData, function(inData) {
 				boards.set(obj.HB16CD, obj.HB16NM);
 			}, {});
 			
-			theData = inData;
+			d3.json('sco_nhs_boards.geojson', function(err, json) {
 			
-			d3.csv("measures_descriptors.csv", function(measuresData) {
+				theData = inData;
+				geojson = json;
+				
+				d3.csv("measures_descriptors.csv", function(measuresData) {
+				
+					measuresData.reduce(function(map, obj) {
+						measuresMap.set(obj.measure, obj);
+					}, {});
 			
-				measuresData.reduce(function(map, obj) {
-					measuresMap.set(obj.measure, obj);
-				}, {});
-		
-					IDs = Array.from(boards.keys());
+					IDs = ["S00000000"];
 					
-					//console.log(IDs);
 					
-						measures.reduce(function(map, obj) {
-							measuresMap.set(obj.measure, obj);
-						}, {});
-						
-						measuresList = Array.from(measuresMap.keys());
-						
-						// add the options to the measures button
-						d3.select('#measureButton')
-						.on('change', function(d) 
-						{
-							update();
-						})
-						.selectAll('option')
-						.data(measuresList)
-						.enter()
-						.append('option')
-						.attr('value', function(d) {return d;})
-						.text(function(d) {return measuresMap.get(d).description;});
-
+					console.log(IDs);
 					
-						rolled = d3.nest()
-										.key(function(d) { return d.Measure; })
-										.key(function(d) { return d.Year; })
-										.key(function(d) { return d.ID; })
-										.rollup(function(v) { return d3.sum(v, function(d) { return d.Value; }); })
-										.entries(theData);
-										
-						nested = d3.nest()
-										.key(function(d) { return d.Measure; })
-										.key(function(d) { return d.Year; })
-										.key(function(d) { return d.ID; })
-										.entries(theData);
-										
-						var yearNested = d3.nest()
-										.key(function(d) { return d.Year; })
-										.entries(theData);
-										
-						console.log(yearNested);
-						years = yearNested.map(function(d) { return d.key;})
-						//console.log(years);
-						
-						// add the options to the measures button
-						d3.select('#yearButton')
-						.on('change', function(d) 
-						{
-							update();
-						})
-						.selectAll('option')
-						.data(years)
-						.enter()
-						.append('option')
-						.attr('value', function(d) {return d;})
-						.text(function(d) {return d;});
-														
-						//console.log(rolled);
+					measures.reduce(function(map, obj) {
+						measuresMap.set(obj.measure, obj);
+					}, {});
+					
+					measuresList = Array.from(measuresMap.keys());
+					
+					// add the options to the measures button
+					d3.select('#measureButton')
+					.on('change', function(d) 
+					{
 						update();
-												
+					})
+					.selectAll('option')
+					.data(measuresList)
+					.enter()
+					.append('option')
+					.attr('value', function(d) {return d;})
+					.text(function(d) {return measuresMap.get(d).description;});
+
+				
+					rolled = d3.nest()
+									.key(function(d) { return d.Measure; })
+									.key(function(d) { return d.Year; })
+									.key(function(d) { return d.ID; })
+									.rollup(function(v) { return d3.sum(v, function(d) { return d.Value; }); })
+									.entries(theData);
+									
+					nested = d3.nest()
+									.key(function(d) { return d.Measure; })
+									.key(function(d) { return d.Year; })
+									.key(function(d) { return d.ID; })
+									.entries(theData);
+									
+					var yearNested = d3.nest()
+									.key(function(d) { return d.Year; })
+									.entries(theData);
+									
+					console.log(yearNested);
+					years = yearNested.map(function(d) { return d.key;})
+					//console.log(years);
+					
+					// add the options to the measures button
+					d3.select('#yearButton')
+					.on('change', function(d) 
+					{
+						update();
+					})
+					.selectAll('option')
+					.data(years)
+					.enter()
+					.append('option')
+					.attr('value', function(d) {return d;})
+					.text(function(d) {return d;});
+													
+					//console.log(rolled);
+					update();
+				})			
 			})
 		})
 	})
@@ -215,6 +249,8 @@ function update()
 	//console.log(measure);
 	
 	year = d3.select("#yearButton").property("value");
+	
+	updateGeo(geojson);
 
 	var rolledSelect = rolled
 	.filter(function(e) {return e.key == measure; })
@@ -301,6 +337,81 @@ function update()
 		})	 
 
 		node.exit().remove();
+}
+
+var projection = d3.geoMercator()
+  .scale(3000)
+  .translate([pageWidth * .75, height / 2])
+  .center([-4, 58]);
+
+var geoGenerator = d3.geoPath()
+  .projection(projection);
+  
+var colours = { teal : "#69b3a2", grey : "#aaa" };
+  
+  function getRegionColour(d) { 
+	return IDs.includes(d.properties.HBCode) ? colours.teal : colours.grey;
+}
+
+var mapmouseenter = function(d) {
+mapTooltip
+  .style("opacity", .8)
+  
+  d3.select(this)
+	.style('fill', colours.teal)
+	.style("opacity", 0.5)
+}
+
+var mapmousemove = function(d) {
+mapTooltip
+  .html(boards.get(d.properties.HBCode))
+  .style("left", (d3.mouse(this)[0] + 20) + "px")
+  .style("top", (d3.mouse(this)[1]) + "px")
+}
+
+var mapmouseleave = function(d) {
+mapTooltip
+  .style("opacity", 0)
+  
+  d3.select(this)
+	.style('fill', getRegionColour(d))
+	.style("opacity", 1)
+}
+
+var mapmouseclick = function(d) {	
+	var hb = d.properties.HBCode;
+	if (IDs.includes(hb))
+	{
+		if (IDs.length > 1)
+		{
+			IDs.splice(IDs.indexOf(hb), 1);
+		}
+	}
+	else
+	{
+		IDs.push(hb)
+	}
+	d3.select(this)
+	.style('fill', getRegionColour(d))
+	.style("opacity", 1)
+	
+	update();
+}
+
+function updateGeo(geojson) {
+  var u = d3.select('svg')
+    .selectAll('path.region')
+    .data(geojson.features);
+
+	u.enter()
+    .append('path')
+	.attr("class", "region")
+    .attr('d', geoGenerator)
+	.style("fill", getRegionColour)
+	.on("mouseenter", mapmouseenter)
+	.on("mousemove", mapmousemove)
+	.on("mouseleave", mapmouseleave)
+	.on("click", mapmouseclick)
 }
 
 
