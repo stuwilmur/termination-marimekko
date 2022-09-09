@@ -3,5 +3,5 @@ Age,Age group,Number
 Gestation,Estimated gestation in completed weeks,Number
 Parity,Previous completed pregnancies,Number
 Method,Method of termination (medical or surgical),Number
-Previous,Previous terminations of pregnancy (none, 1 or more), Number
-SIMD,Scottish Index of Multiple Deprivation quintile (1 = least deprived, 5 = most deprived),Number
+Previous,"Previous terminations of pregnancy (none, 1 or more)", Number
+SIMD,"Scottish Index of Multiple Deprivation quintile (1 = least deprived, 5 = most deprived)",Number
