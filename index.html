@@ -217,9 +217,9 @@ d3.csv("terminations data.csv", parseData, function(inData) {
 									.key(function(d) { return d.Year; })
 									.entries(theData);
 									
-					//console.log(theData);
-					years = yearNested.map(function(d) { return d.key;})
-					//console.log(years);
+					//console.log(yearNested);
+					years = yearNested.map(function(d) { return d.key;}).sort()
+					console.log(years);
 					
 					// add the options to the measures button
 					d3.select('#yearButton')
