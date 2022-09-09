@@ -1,7 +1,7 @@
 measure,description,unit
-Age,Age of woman,Number
-Gestation,Estimated gestation (completed weeks),Cumulative percentage
-Grounds,Grounds for abortion,Number
-Method,Method of termination,Percentage
-Previous,Previous terminations,Rate per 1000 women age 15-44
-SIMD,Deprivation (SIMD) quintile,Rate per 1000 women age 15-44
+Age,Age group,Number
+Gestation,Estimated gestation in completed weeks,Number
+Parity,Previous completed pregnancies,Number
+Method,Method of termination (medical or surgical),Number
+Previous,Previous terminations of pregnancy (none, 1 or more), Number
+SIMD,Scottish Index of Multiple Deprivation quintile (1 = least deprived, 5 = most deprived),Number

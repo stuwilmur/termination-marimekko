@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
  <head>
-  <title>Scotland termination figures</title>
+  <title>Scotland termination of pregnancy figures by Health board Marimekko chart</title>
  
 <meta charset="utf-8">
 
@@ -22,7 +22,7 @@ body {
 }
 
 .caption {
-	font-size : 130%;
+	font-size : 150%;
 }
 
 .subcaption {
@@ -58,8 +58,8 @@ body {
 <select id="measureButton"></select>
 <select id="yearButton"></select>
 </div>
-<p class="caption">Termination of pregnancy in Scotland across health board categorised by age, deprivation, estimated gestation,  method and grounds for termination.<br /><strong>Click on the map</strong> to select/deselect health boards. Use the menus below to select categorisation and year.</p>
-<p class="subcaption">Data from the <a href="https://beta.isdscotland.org/find-publications-and-data/population-health/sexual-health/termination-of-pregnancy-statistics/">Termination of Pregnancy report, Public Health Scotland Data and Intelligence, published 25 August 2020</a>.</p>
+<p class="caption">Termination of pregnancy in Scotland across health board categorised by age, deprivation, estimated gestation, method of termination and parity.<br /><strong>Click on the map</strong> to select/deselect health boards. Use the menus below to select categorisation and year.</p>
+<p class="subcaption">Data from the <a href="https://beta.isdscotland.org/find-publications-and-data/population-health/sexual-health/termination-of-pregnancy-statistics/">Termination of Pregnancy report, Public Health Scotland Data and Intelligence, published 29 June 2021</a>.</p>
 <script>
 
 var width = 800;
@@ -103,7 +103,7 @@ var mapTooltip = d3.select("#my_dataviz")
   .style("font-family", "Merriweather")
   .style("font-size", "150%")
   
-// Three function that change the tooltip when user hover / move / leave a cell
+// Three functions that change the tooltip when user hover / move / leave a cell
 var mouseover = function(d) {
 Tooltip
   .style("opacity", .8)
@@ -133,7 +133,7 @@ function parseData(d) {
 }
 
 var measure = "Age";
-var year = "2009";
+var year = "2020";
 var boards = new Map();
 
 function getNodeText(d, value = false)
@@ -178,7 +178,7 @@ d3.csv("terminations data.csv", parseData, function(inData) {
 					IDs = ["S00000000"];
 					
 					
-					console.log(IDs);
+					//console.log(IDs);
 					
 					measures.reduce(function(map, obj) {
 						measuresMap.set(obj.measure, obj);
@@ -217,7 +217,7 @@ d3.csv("terminations data.csv", parseData, function(inData) {
 									.key(function(d) { return d.Year; })
 									.entries(theData);
 									
-					console.log(yearNested);
+					//console.log(theData);
 					years = yearNested.map(function(d) { return d.key;})
 					//console.log(years);
 					
